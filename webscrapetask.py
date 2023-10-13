@@ -5,6 +5,7 @@ from datetime import datetime
 import plotly.express as px
 import pandas as pd
 import streamlit as st
+import sqlite3
 
 url = "http://programmer100.pythonanywhere.com/"
 HEADERS = {
@@ -14,14 +15,18 @@ def extract(url):
     content = response.text
     return content
 
-def create_file():
-    file = open("data1.txt", 'w')
-    file.write("date,temperature" + '\n')
-    file.close()
+def create_table():
+    with open("datb.db", 'w') as file:
+        response = sqlite3.connect("datb.db")
+        cursor = response.cursor()
+        cursor.execute("CREATE TABLE temps(date TEXT, temperature TEXT)")
+        response.commit()
 
-def write_file(time, temp):
-      with open("data1.txt", 'a') as file:
-          file.write (f"{time},{temp}" +'\n')
+def write_table(time, temp):
+    response = sqlite3.connect("datb.db")
+    cursor = response.cursor()
+    cursor.execute("INSERT INTO temps VALUES(?,?)", (time, temp))
+    response.commit()
 
 
 def parse(content):
@@ -30,19 +35,20 @@ def parse(content):
     return parsed
 
 if __name__ == "__main__":
-    ext = extract(url)
-    data = parse(ext)
-    print(data)
+    while True:
+        ext = extract(url)
+        data = parse(ext)
+        print(data)
 
-    if not os.path.exists("data1.txt"):
-        create_file()
-        pass
-    now = datetime.now()
-    write_file(now, data)
-    df = pd.read_csv("data1.txt")
-    figure = px.line(x=df['date'] , y=df['temperature'], labels={'x':'date', 'y':'temperature'})
-    st.title("Temperature in the World!")
-    st.plotly_chart(figure)
+        if not os.path.exists("datb.db"):
+            create_table()
+            pass
+        now = datetime.now()
+        write_table(now, data)
+        # df = pd.read_csv("data1.txt")
+        # figure = px.line(x=df['date'] , y=df['temperature'], labels={'x':'date', 'y':'temperature'})
+        # st.title("Temperature in the World!")
+        # st.plotly_chart(figure)
 
 
 
